@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -31,6 +32,8 @@ abstract interface class ImageUploadApiService {
   });
 
   Future<void> deleteTemporary(String assetId);
+
+  Future<String?> getImageUrl(String storageId);
 }
 
 class HttpImageUploadApiService implements ImageUploadApiService {
@@ -95,13 +98,33 @@ class HttpImageUploadApiService implements ImageUploadApiService {
     }
   }
 
+  @override
+  Future<String?> getImageUrl(String storageId) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/api/v1/images/url').replace(
+        queryParameters: {'storage_id': storageId},
+      );
+      final response = await _client.get(uri).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        return decoded['url'] as String?;
+      }
+    } catch (e) {
+      debugPrint('[IMAGE API] failed to resolve URL: $e');
+    }
+    return null;
+  }
+
   Future<ImageStorageReference> _upload(
     String path,
     String identifierName,
     String identifier,
     LocalImage image,
   ) async {
-    final mime = image.mimeType ?? image.file.mimeType ?? '';
+    final mime =
+        image.mimeType ??
+        image.file.mimeType ??
+        _mimeTypeFromFileName(image.fileName ?? image.file.name);
     if (mime.isEmpty) {
       throw const ImageUploadApiException(400, 'Image type is unknown.');
     }
@@ -138,6 +161,15 @@ class HttpImageUploadApiService implements ImageUploadApiService {
         'Image storage returned an invalid response.',
       );
     }
+  }
+
+  String _mimeTypeFromFileName(String fileName) {
+    return switch (fileName.toLowerCase().split('.').last) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      _ => '',
+    };
   }
 
   String _message(String body) {

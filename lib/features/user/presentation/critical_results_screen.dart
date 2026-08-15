@@ -109,14 +109,40 @@ class _CriticalResultsScreenState extends State<CriticalResultsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Possible Match Found',
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_formatConfidence(record.matchConfidence)}% Match Score',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (record.matchLabel != null)
+                      Text(
+                        record.matchLabel!,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black54,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
                 ),
-                const Text(
-                  'Probable',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-                ),
+                if (record.explanation != null)
+                  Expanded(
+                    child: Text(
+                      record.explanation!,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blueGrey,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
               ],
             ),
             const Divider(height: 32),
@@ -145,6 +171,10 @@ class _CriticalResultsScreenState extends State<CriticalResultsScreen> {
       ),
     );
   }
+
+  String _formatConfidence(num confidence) => confidence % 1 == 0
+      ? confidence.toInt().toString()
+      : confidence.toString();
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(

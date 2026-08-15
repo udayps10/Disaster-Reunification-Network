@@ -111,7 +111,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 children: [
                   Text(
                     _matches.isEmpty
-                        ? 'No exact matches found.'
+                        ? 'No strong matches found.'
                         : 'Based on the details you provided',
                     style: const TextStyle(fontSize: 16, color: Colors.grey),
                   ),
@@ -255,14 +255,51 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     style: const TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${_formatConfidence(record.matchConfidence)}% Match Confidence',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        '${_formatConfidence(record.matchConfidence)}% Match Score',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      if (record.matchLabel != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getLabelColor(record.matchLabel!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            record.matchLabel!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                  if (record.explanation != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      record.explanation!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.blueGrey,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     'Location: ${record.campName}',
@@ -288,4 +325,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
   String _formatConfidence(num confidence) => confidence % 1 == 0
       ? confidence.toInt().toString()
       : confidence.toString();
+
+  Color _getLabelColor(String label) {
+    return switch (label) {
+      'Strong Match' => Colors.green,
+      'Possible Match' => Colors.orange,
+      'Weak Match' => Colors.blueGrey,
+      _ => Colors.grey,
+    };
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/normal_record.dart';
 import '../../../data/models/critical_record.dart';
 import '../../../data/repositories/official_normal_record_repository.dart';
@@ -94,15 +95,13 @@ class _RecentRecordsScreenState extends State<RecentRecordsScreen> {
                       final bool isCritical = r is CriticalRecord;
 
                       return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isCritical
-                              ? Colors.red[50]
-                              : Colors.blue[50],
-                          child: Icon(
-                            isCritical ? Icons.lock : Icons.person,
-                            color: isCritical ? Colors.red : Colors.blue,
-                            size: 20,
-                          ),
+                        leading: OfficialPhotoView(
+                          photoLocalPath: r is NormalRecord ? r.photoLocalPath : (r as CriticalRecord).photoLocalPath,
+                          photoUrl: r is NormalRecord ? r.photoUrl : (r as CriticalRecord).photoUrl,
+                          size: 40,
+                          borderRadius: 20,
+                          placeholderIcon: isCritical ? Icons.lock : Icons.person,
+                          placeholderColor: isCritical ? Colors.red[50] : Colors.blue[50],
                         ),
                         title: Text(
                           isCritical ? r.name : (r as NormalRecord).name,

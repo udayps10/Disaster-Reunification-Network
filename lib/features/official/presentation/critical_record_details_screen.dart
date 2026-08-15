@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/critical_record.dart';
 import '../../../data/repositories/official_critical_record_repository.dart';
 
@@ -120,22 +119,19 @@ class _CriticalRecordDetailsScreenState
               'Last Known Clothing',
               _currentRecord.lastKnownClothing,
             ),
-            if (_currentRecord.clothingPhotoLocalPath != null &&
-                File(_currentRecord.clothingPhotoLocalPath!).existsSync()) ...[
+            if (_currentRecord.clothingPhotoLocalPath != null || _currentRecord.clothingPhotoUrl != null) ...[
               const SizedBox(height: 12),
               const Text(
                 'Clothing Photo (Official Only)',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(_currentRecord.clothingPhotoLocalPath!),
-                  height: 140,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+              OfficialPhotoView(
+                photoLocalPath: _currentRecord.clothingPhotoLocalPath,
+                photoUrl: _currentRecord.clothingPhotoUrl,
+                size: 140,
+                borderRadius: 12,
+                placeholderIcon: Icons.checkroom,
               ),
             ],
             const SizedBox(height: 24),
@@ -180,27 +176,13 @@ class _CriticalRecordDetailsScreenState
     return Center(
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.red[50],
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.red[200]!, width: 2),
-            ),
-            child:
-                _currentRecord.photoLocalPath != null &&
-                    File(_currentRecord.photoLocalPath!).existsSync()
-                ? ClipOval(
-                    child: SizedBox(
-                      width: 128,
-                      height: 128,
-                      child: Image.file(
-                        File(_currentRecord.photoLocalPath!),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  )
-                : const Icon(Icons.lock, size: 64, color: Colors.red),
+          OfficialPhotoView(
+            photoLocalPath: _currentRecord.photoLocalPath,
+            photoUrl: _currentRecord.photoUrl,
+            size: 128,
+            borderRadius: 64,
+            placeholderIcon: Icons.lock,
+            placeholderColor: Colors.red[50],
           ),
           const SizedBox(height: 16),
           const Text(

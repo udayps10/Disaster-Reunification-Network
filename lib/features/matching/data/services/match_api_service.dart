@@ -22,12 +22,16 @@ abstract interface class MatchApiService {
 class HttpMatchApiService implements MatchApiService {
   HttpMatchApiService({http.Client? client, String? baseUrl})
     : _client = client ?? http.Client(),
-      _baseUrl = (baseUrl ?? ApiConfig.matchingBaseUrl).replaceFirst(RegExp(r'/$'), '');
+      _baseUrl = (baseUrl ?? ApiConfig.matchingBaseUrl).replaceFirst(RegExp(r'/$'), '') {
+    if (kDebugMode) {
+      debugPrint('[MATCH API] base URL=$_baseUrl');
+    }
+  }
 
   final http.Client _client;
   final String _baseUrl;
 
-  static const _timeout = Duration(seconds: 12);
+  static const _timeout = Duration(seconds: 90);
 
   @override
   Future<MatchResponse> findMatches(MatchRequest request) =>
@@ -38,14 +42,24 @@ class HttpMatchApiService implements MatchApiService {
       _post('/api/v1/match/more', request.toJson());
 
   Future<MatchResponse> _post(String path, Map<String, dynamic> body) async {
+    final matchUrl = '$_baseUrl$path';
+    debugPrint('[MATCH DEBUG] baseUrl = $_baseUrl');
+    debugPrint('[MATCH DEBUG] matchUrl = $matchUrl');
+    debugPrint('[MATCH DEBUG] requestCreated = true');
+    debugPrint('[MATCH DEBUG] requestJson = ${jsonEncode(body)}');
     try {
+      debugPrint('[MATCH DEBUG] requestStarted = true');
       final response = await _client
           .post(
-            Uri.parse('$_baseUrl$path'),
+            Uri.parse(matchUrl),
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode(body),
           )
           .timeout(_timeout);
+
+      debugPrint('[MATCH DEBUG] responseReceived = true');
+      debugPrint('[MATCH DEBUG] responseStatus = ${response.statusCode}');
+      debugPrint('[MATCH DEBUG] responseBodyLength = ${response.body.length}');
 
       if (kDebugMode) {
         debugPrint('[MATCH API] $path status=${response.statusCode}');
@@ -54,9 +68,11 @@ class HttpMatchApiService implements MatchApiService {
 
       Map<String, dynamic>? decoded;
       if (response.body.trim().isNotEmpty) {
+        debugPrint('[MATCH DEBUG] jsonParsingStarted = true');
         final value = jsonDecode(response.body);
         if (value is! Map) throw const FormatException('Response is not an object');
         decoded = Map<String, dynamic>.from(value);
+        debugPrint('[MATCH DEBUG] jsonParsingCompleted = true');
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw MatchApiException.fromResponse(response.statusCode, decoded);
@@ -65,7 +81,9 @@ class HttpMatchApiService implements MatchApiService {
         throw const FormatException('Response body is empty');
       }
       try {
-        return MatchResponse.fromJson(decoded);
+        final result = MatchResponse.fromJson(decoded);
+        debugPrint('[MATCH DEBUG] repositoryCompleted = true');
+        return result;
       } on FormatException catch (error, stackTrace) {
         if (kDebugMode) {
           debugPrint('[MATCH API] response parsing failed: $error');
@@ -73,21 +91,25 @@ class HttpMatchApiService implements MatchApiService {
         }
         rethrow;
       }
-    } on MatchApiException {
+    } on MatchApiException catch (e) {
+      debugPrint('[MATCH DEBUG] exception = MatchApiException: $e');
       rethrow;
-    } on TimeoutException {
+    } on TimeoutException catch (e) {
+      debugPrint('[MATCH DEBUG] exception = TimeoutException: $e');
       throw MatchApiException(
         statusCode: 0,
         code: 'timeout',
         message: 'Matching request timed out. Please try again.',
       );
-    } on SocketException {
+    } on SocketException catch (e) {
+      debugPrint('[MATCH DEBUG] exception = SocketException: $e');
       throw MatchApiException(
         statusCode: 0,
         code: 'connection_failed',
         message: 'Matching service is unavailable. Please check your connection.',
       );
     } on FormatException catch (error, stackTrace) {
+      debugPrint('[MATCH DEBUG] exception = FormatException: $error');
       if (kDebugMode) {
         debugPrint('[MATCH API] invalid response field/type: $error');
         debugPrint('$stackTrace');
@@ -97,7 +119,8 @@ class HttpMatchApiService implements MatchApiService {
         code: 'invalid_response',
         message: 'The matching service returned an invalid response.',
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[MATCH DEBUG] exception = Unknown: $e');
       throw MatchApiException(
         statusCode: 0,
         code: 'network_error',

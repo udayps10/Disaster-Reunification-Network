@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as image_codec;
 import 'package:image_picker/image_picker.dart';
 
@@ -27,11 +26,14 @@ class LocalImageSelectionService implements ImageSelectionService {
   }) async {
     final file = await _picker.pickImage(source: source);
     if (file == null) return null;
+    final bytes = await file.readAsBytes();
     return LocalImage(
       file: file,
-      bytes: await file.readAsBytes(),
+      bytes: bytes,
       fileName: file.name,
-      mimeType: file.mimeType,
+      // Android camera providers do not always populate XFile.mimeType.
+      // Detect it from the validated bytes so uploads work for both sources.
+      mimeType: file.mimeType ?? _detectMimeType(bytes),
     );
   }
 

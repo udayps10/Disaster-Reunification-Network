@@ -37,15 +37,19 @@ class LocationService {
       await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
+        debugPrint('[LOCATION SERVICE] System location services are DISABLED');
         return LocationPermissionStatus.serviceDisabled;
       }
 
       // Check current permission.
       LocationPermission permission = await Geolocator.checkPermission();
+      debugPrint('[LOCATION SERVICE] Initial permission status: $permission');
 
       // Ask for permission if not granted yet.
       if (permission == LocationPermission.denied) {
+        debugPrint('[LOCATION SERVICE] Permission denied, requesting...');
         permission = await Geolocator.requestPermission();
+        debugPrint('[LOCATION SERVICE] Permission after request: $permission');
 
         if (permission == LocationPermission.denied) {
           return LocationPermissionStatus.denied;

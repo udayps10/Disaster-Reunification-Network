@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/normal_record.dart';
 import '../../../data/models/camp.dart';
 import '../../../data/repositories/official_normal_record_repository.dart';
@@ -192,9 +193,11 @@ class _NormalRecordsListScreenState extends State<NormalRecordsListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          backgroundColor: Colors.grey[200],
-          child: const Icon(Icons.person, color: Colors.grey),
+        leading: OfficialPhotoView(
+          photoLocalPath: record.photoLocalPath,
+          photoUrl: record.photoUrl,
+          size: 56,
+          borderRadius: 4,
         ),
         title: Text(
           record.name,

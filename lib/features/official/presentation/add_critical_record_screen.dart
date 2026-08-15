@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../data/models/critical_record.dart';
 import '../../../data/models/camp.dart';
 import '../../../data/repositories/camp_repository.dart';
@@ -11,6 +12,7 @@ import '../../../core/common_widgets/app_text_field.dart';
 import '../../../core/utils/location_service.dart';
 import '../../images/data/image_selection_service.dart';
 import '../../images/data/local_image_store.dart';
+import '../../images/presentation/image_source_picker.dart';
 
 class AddCriticalRecordScreen extends StatefulWidget {
   const AddCriticalRecordScreen({super.key});
@@ -184,9 +186,12 @@ class _AddCriticalRecordScreenState extends State<AddCriticalRecordScreen> {
     }
   }
 
-  Future<void> _pickPhoto({required bool clothing}) async {
+  Future<void> _pickPhoto({
+    required bool clothing,
+    ImageSource source = ImageSource.gallery,
+  }) async {
     try {
-      final image = await _imageSelection.pickImage();
+      final image = await _imageSelection.pickImage(source: source);
       if (image == null) return;
       final validation = await _imageSelection.validateImage(image);
       if (!validation.isValid) {
@@ -210,6 +215,11 @@ class _AddCriticalRecordScreenState extends State<AddCriticalRecordScreen> {
       debugPrint('$stackTrace');
       if (mounted) _showSnackBar('Unable to select or save the photo.');
     }
+  }
+
+  Future<void> _choosePhotoSource({required bool clothing}) async {
+    final source = await chooseImageSource(context);
+    if (source != null) await _pickPhoto(clothing: clothing, source: source);
   }
 
   @override
@@ -332,7 +342,7 @@ class _AddCriticalRecordScreenState extends State<AddCriticalRecordScreen> {
             'Person Photo',
             Icons.person,
             _photoLocalPath,
-            () => _pickPhoto(clothing: false),
+            () => _choosePhotoSource(clothing: false),
           ),
         ),
         const SizedBox(width: 16),
@@ -341,7 +351,7 @@ class _AddCriticalRecordScreenState extends State<AddCriticalRecordScreen> {
             'Clothing Photo',
             Icons.checkroom,
             _clothingPhotoLocalPath,
-            () => _pickPhoto(clothing: true),
+            () => _choosePhotoSource(clothing: true),
           ),
         ),
       ],
@@ -377,7 +387,7 @@ class _AddCriticalRecordScreenState extends State<AddCriticalRecordScreen> {
         const SizedBox(height: 8),
         TextButton.icon(
           onPressed: onTap,
-          icon: const Icon(Icons.photo_library, size: 16),
+          icon: const Icon(Icons.add_a_photo, size: 16),
           label: Text(label),
         ),
       ],

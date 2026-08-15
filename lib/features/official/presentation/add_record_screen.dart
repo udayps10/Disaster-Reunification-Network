@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../../data/models/disaster_record.dart';
 import '../../../data/models/normal_record.dart';
 import '../../../data/models/camp.dart';
@@ -11,6 +12,7 @@ import '../../../core/common_widgets/app_button.dart';
 import '../../../core/common_widgets/app_text_field.dart';
 import '../../images/data/image_selection_service.dart';
 import '../../images/data/local_image_store.dart';
+import '../../images/presentation/image_source_picker.dart';
 
 class AddRecordScreen extends StatefulWidget {
   final RecordType type;
@@ -136,9 +138,9 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     }
   }
 
-  Future<void> _pickPhoto() async {
+  Future<void> _pickPhoto({ImageSource source = ImageSource.gallery}) async {
     try {
-      final image = await _imageSelection.pickImage();
+      final image = await _imageSelection.pickImage(source: source);
       if (image == null) return;
       final validation = await _imageSelection.validateImage(image);
       if (!validation.isValid) {
@@ -160,6 +162,11 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         );
       }
     }
+  }
+
+  Future<void> _choosePhotoSource() async {
+    final source = await chooseImageSource(context);
+    if (source != null) await _pickPhoto(source: source);
   }
 
   @override
@@ -260,7 +267,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       child: Column(
         children: [
           InkWell(
-            onTap: _pickPhoto,
+            onTap: _choosePhotoSource,
             child: Container(
               height: 120,
               width: 120,
@@ -282,8 +289,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           ),
           const SizedBox(height: 8),
           TextButton.icon(
-            onPressed: _pickPhoto,
-            icon: const Icon(Icons.photo_library),
+            onPressed: _choosePhotoSource,
+            icon: const Icon(Icons.add_a_photo),
             label: Text(
               isCritical ? 'Person Photo (Internal)' : 'Person Photo',
             ),

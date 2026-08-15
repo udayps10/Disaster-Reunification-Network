@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/critical_record.dart';
 import '../../../data/models/normal_record.dart';
 import '../../../data/repositories/official_critical_record_repository.dart';
@@ -23,6 +24,7 @@ class _SearchRecordsScreenState extends State<SearchRecordsScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[SEARCH SCREEN] opened');
     _loadRecords();
   }
 
@@ -103,14 +105,13 @@ class _SearchRecordsScreenState extends State<SearchRecordsScreen> {
                           ? record.age
                           : (record as NormalRecord).age;
                       return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isCritical
-                              ? Colors.red
-                              : Colors.blue,
-                          child: Icon(
-                            isCritical ? Icons.warning : Icons.person,
-                            color: Colors.white,
-                          ),
+                        leading: OfficialPhotoView(
+                          photoLocalPath: isCritical ? record.photoLocalPath : (record as NormalRecord).photoLocalPath,
+                          photoUrl: isCritical ? record.photoUrl : (record as NormalRecord).photoUrl,
+                          size: 40,
+                          borderRadius: 20,
+                          placeholderIcon: isCritical ? Icons.lock : Icons.person,
+                          placeholderColor: isCritical ? Colors.red[50] : Colors.blue[50],
                         ),
                         title: Text(name),
                         subtitle: Text(
@@ -157,19 +158,14 @@ class _SearchRecordsScreenState extends State<SearchRecordsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  height: 200,
-                  width: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: isCritical ? Colors.red[50] : Colors.blue[50],
-                  ),
-                  child: Icon(
-                    isCritical ? Icons.warning : Icons.person,
-                    size: 72,
-                    color: isCritical ? Colors.red : Colors.blue,
-                  ),
+            Center(
+                child: OfficialPhotoView(
+                  photoLocalPath: isCritical ? record.photoLocalPath : (record as NormalRecord).photoLocalPath,
+                  photoUrl: isCritical ? record.photoUrl : (record as NormalRecord).photoUrl,
+                  size: 200,
+                  borderRadius: 16,
+                  placeholderIcon: isCritical ? Icons.lock : Icons.person,
+                  placeholderColor: isCritical ? Colors.red[50] : Colors.blue[50],
                 ),
               ),
               const SizedBox(height: 24),

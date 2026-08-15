@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/normal_record.dart';
 import '../../../data/repositories/official_normal_record_repository.dart';
 
@@ -23,6 +22,7 @@ class _NormalRecordDetailsScreenState extends State<NormalRecordDetailsScreen> {
   void initState() {
     super.initState();
     _currentRecord = widget.record;
+    debugPrint('[DETAILS SCREEN] opened for recordId=${_currentRecord.id}');
   }
 
   Future<void> _updateStatus(NormalRecordStatus newStatus) async {
@@ -136,25 +136,11 @@ class _NormalRecordDetailsScreenState extends State<NormalRecordDetailsScreen> {
     return Center(
       child: Column(
         children: [
-          Container(
-            height: 150,
-            width: 150,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child:
-                _currentRecord.photoLocalPath != null &&
-                    File(_currentRecord.photoLocalPath!).existsSync()
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      File(_currentRecord.photoLocalPath!),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : const Icon(Icons.person, size: 80, color: Colors.grey),
+          OfficialPhotoView(
+            photoLocalPath: _currentRecord.photoLocalPath,
+            photoUrl: _currentRecord.photoUrl,
+            size: 150,
+            borderRadius: 16,
           ),
           const SizedBox(height: 16),
           Container(

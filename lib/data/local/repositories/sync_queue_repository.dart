@@ -158,6 +158,14 @@ class SyncQueueRepository {
         ),
       );
 
+  Future<SyncQueueEntry?> getById(int id) async {
+    final row =
+        await (_database.select(_database.syncQueue)
+              ..where((table) => table.id.equals(id)))
+            .getSingleOrNull();
+    return row != null ? _fromRow(row) : null;
+  }
+
   SyncQueueEntry _fromRow(local.SyncQueueData row) => SyncQueueEntry(
     id: row.id,
     entityType: row.entityType,

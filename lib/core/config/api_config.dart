@@ -1,11 +1,19 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// Android emulators reach the development machine through 10.0.2.2.
-  /// Override with --dart-define=MATCHING_API_BASE_URL=... for a device or
-  /// production deployment.
+  /// Development backend address used by the Android emulator.
+  static const androidEmulatorBaseUrl = 'http://10.0.2.2:8000';
+
+  /// Development backend address used by a physical Android phone on the
+  /// same LAN as the development PC.
+  static const physicalAndroidBaseUrl = 'http://192.168.0.110:8000';
+
+  /// Override with --dart-define=API_BASE_URL=... for a physical
+  /// device or a future HTTPS production deployment.
+  /// 
+  /// TEMPORARY: Defaulting to physical IP for urgent debug.
   static const matchingBaseUrl = String.fromEnvironment(
-    'MATCHING_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    'API_BASE_URL',
+    defaultValue: physicalAndroidBaseUrl,
   );
 }

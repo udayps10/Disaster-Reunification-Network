@@ -7,6 +7,8 @@ abstract class MatchResult {
     required this.officerName,
     required this.officerContact,
     required this.matchConfidence,
+    this.matchLabel,
+    this.explanation,
   });
 
   final String recordId;
@@ -17,6 +19,8 @@ abstract class MatchResult {
   final String officerContact;
   /// Supplied by the future AI service; Flutter does not calculate it.
   final num matchConfidence;
+  final String? matchLabel;
+  final String? explanation;
 }
 
 class NormalMatchResult extends MatchResult {
@@ -28,6 +32,8 @@ class NormalMatchResult extends MatchResult {
     required super.officerName,
     required super.officerContact,
     required super.matchConfidence,
+    super.matchLabel,
+    super.explanation,
     this.photoUrl,
     this.status,
   });
@@ -51,6 +57,8 @@ class NormalMatchResult extends MatchResult {
         'match_score',
         'match_confidence',
       ),
+      matchLabel: _optionalString(json, 'matchLabel', 'match_label'),
+      explanation: json['explanation'] as String?,
     );
   }
 }
@@ -64,6 +72,8 @@ class CriticalMatchResult extends MatchResult {
     required super.officerName,
     required super.officerContact,
     required super.matchConfidence,
+    super.matchLabel,
+    super.explanation,
     this.lastKnownClothing,
   });
 
@@ -86,6 +96,8 @@ class CriticalMatchResult extends MatchResult {
         'match_score',
         'match_confidence',
       ),
+      matchLabel: _optionalString(json, 'matchLabel', 'match_label'),
+      explanation: json['explanation'] as String?,
     );
   }
 }

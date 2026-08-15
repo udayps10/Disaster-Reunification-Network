@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/common_widgets/official_photo_view.dart';
 import '../../../data/models/critical_record.dart';
 import '../../../data/models/camp.dart';
 import '../../../data/repositories/official_critical_record_repository.dart';
@@ -173,9 +174,13 @@ class _CriticalRecordsListScreenState extends State<CriticalRecordsListScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          backgroundColor: Colors.red[50],
-          child: const Icon(Icons.lock, color: Colors.red, size: 20),
+        leading: OfficialPhotoView(
+          photoLocalPath: record.photoLocalPath,
+          photoUrl: record.photoUrl,
+          size: 56,
+          borderRadius: 4,
+          placeholderIcon: Icons.lock,
+          placeholderColor: Colors.red[50],
         ),
         title: Text(
           record.name,

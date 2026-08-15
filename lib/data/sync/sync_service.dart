@@ -70,14 +70,22 @@ class SyncService extends ChangeNotifier {
     await stopSession();
     ownerUid = uid;
     await _claimLegacyRows(uid);
+    
+    // Immediate check and then listen for changes.
+    unawaited(isOnline().then((online) {
+      if (online) unawaited(syncAll());
+    }));
+    
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-      (_) => unawaited(syncAll()),
+      (results) {
+        final isConnected = !results.contains(ConnectivityResult.none);
+        if (isConnected) unawaited(syncAll());
+      },
     );
     _syncPollTimer = Timer.periodic(
       const Duration(seconds: 15),
       (_) => unawaited(syncAll()),
     );
-    unawaited(syncAll());
   }
 
   Future<void> stopSession() async {
@@ -303,9 +311,9 @@ class SyncService extends ChangeNotifier {
       rethrow;
     }
     debugPrint('[ADD NORMAL] localSaveSucceeded=true queueInsertStarted=true');
-    late final int id;
+    late final int queueId;
     try {
-      id = await queue.enqueue(
+      queueId = await queue.enqueue(
         ownerUid: ownerUid,
         entityType: 'normal_record',
         entityId: value.id,
@@ -317,9 +325,23 @@ class SyncService extends ChangeNotifier {
       debugPrint('$stackTrace');
       rethrow;
     }
-    debugPrint('[ADD NORMAL] queueInsertSucceeded=true syncStarted=true');
-    unawaited(syncAll());
-    return id;
+    
+    debugPrint('[ADD NORMAL] queueInsertSucceeded=true onlineCheckStarted=true');
+    // Implementation of "Online-First": try immediate sync if connected.
+    if (await isOnline()) {
+      debugPrint('[ADD NORMAL] online=true immediateSyncStarted=true');
+      try {
+        await _syncSingleItem(queueId);
+        debugPrint('[ADD NORMAL] immediateSyncSucceeded=true');
+      } catch (error) {
+        debugPrint('[ADD NORMAL] immediateSyncFailed: $error');
+        // Fallback to background sync is already handled by the queue entry.
+      }
+    } else {
+      debugPrint('[ADD NORMAL] online=false backgroundSyncScheduled=true');
+    }
+    
+    return queueId;
   }
 
   Future<int> saveCritical(
@@ -341,9 +363,9 @@ class SyncService extends ChangeNotifier {
     debugPrint(
       '[ADD CRITICAL] localSaveSucceeded=true queueInsertStarted=true',
     );
-    late final int id;
+    late final int queueId;
     try {
-      id = await queue.enqueue(
+      queueId = await queue.enqueue(
         ownerUid: ownerUid,
         entityType: 'critical_record',
         entityId: value.id,
@@ -355,24 +377,62 @@ class SyncService extends ChangeNotifier {
       debugPrint('$stackTrace');
       rethrow;
     }
-    debugPrint('[ADD CRITICAL] queueInsertSucceeded=true syncStarted=true');
-    unawaited(syncAll());
-    return id;
+    
+    debugPrint('[ADD CRITICAL] queueInsertSucceeded=true onlineCheckStarted=true');
+    if (await isOnline()) {
+      debugPrint('[ADD CRITICAL] online=true immediateSyncStarted=true');
+      try {
+        await _syncSingleItem(queueId);
+        debugPrint('[ADD CRITICAL] immediateSyncSucceeded=true');
+      } catch (error) {
+        debugPrint('[ADD CRITICAL] immediateSyncFailed: $error');
+      }
+    } else {
+      debugPrint('[ADD CRITICAL] online=false backgroundSyncScheduled=true');
+    }
+    
+    return queueId;
   }
 
   Future<int> saveCamp(Camp camp, {required String operationType}) async {
     await _ensureSession();
     final value = camp.id.isEmpty ? _withCampId(camp) : camp;
     await camps.insertOrUpdate(value);
-    final id = await queue.enqueue(
+    final queueId = await queue.enqueue(
       ownerUid: ownerUid,
       entityType: 'camp',
       entityId: value.id,
       operationType: operationType,
       payload: _campPayload(value),
     );
-    unawaited(syncAll());
-    return id;
+    
+    if (await isOnline()) {
+      try {
+        await _syncSingleItem(queueId);
+      } catch (_) {}
+    }
+    
+    return queueId;
+  }
+
+  Future<void> _syncSingleItem(int queueId) async {
+    final entry = await queue.getById(queueId);
+    if (entry == null || entry.syncStatus == 'completed') return;
+    
+    await queue.markSyncing(entry.id);
+    try {
+      final payload = Map<String, dynamic>.from(entry.payload);
+      await _uploadPendingImages(entry, payload);
+      await _firestore
+          .collection(_collectionFor(entry.entityType))
+          .doc(entry.entityId)
+          .set(_toFirestoreMap(payload), SetOptions(merge: true));
+      await queue.markCompleted(entry.id);
+    } catch (error) {
+      await queue.incrementRetry(entry.id);
+      await queue.markFailed(entry.id);
+      rethrow;
+    }
   }
 
   String _collectionFor(String type) => switch (type) {
